@@ -1,0 +1,8 @@
+[package]
+name = "fstat"
+version = "0.1.0"
+edition = "2021"
+authors = ["Dallas", "Apach876"]
+description = "A lightweight console application designed to collect minimal statistics on your project."
+
+[dependencies]
