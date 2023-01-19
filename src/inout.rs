@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 
-use crate::traits::FmtOutputBack;
-use crate::utils::Collected;
+use crate::utils::{Collected, format_sequence};
 
 #[derive(Debug)]
 pub struct FStatInput {
@@ -11,20 +10,23 @@ pub struct FStatInput {
 }
 
 impl FStatInput {
-    pub fn from(mut args: Vec<String>) -> Self {
+    pub fn from(args: Vec<String>) -> Self {
         let mut options = Vec::new();
         let mut ignore_objects = Vec::new();
         let mut file_extensions = Vec::new();
 
-        args.remove(0);
+        let args_i = args.iter()
+            .skip(1);
 
-        for arg in args {
+        for arg in args_i {
+            let argument = arg.to_string();
+
             if arg.starts_with("--") {
-                options.push(arg);
+                options.push(argument);
             } else if arg.starts_with(".") {
-                file_extensions.push(arg);
+                file_extensions.push(argument);
             } else {
-                ignore_objects.push(arg);
+                ignore_objects.push(argument);
             }
         }
 
@@ -51,20 +53,21 @@ impl FStatOutput {
     }
 }
 
-impl FmtOutputBack for FStatOutput {
-    fn get_pretty(&self) -> String {
-        todo!()
-    }
-
-    fn format_fields(&self) -> String {
-        todo!()
-    }
-}
-
 impl Display for FStatOutput {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let pretty_output = self.get_pretty();
-        f.write_str(pretty_output.as_str())
+        let files_seq = format_sequence(self.input.file_extensions.clone()); //
+
+        let _fmt_l1 = format!(
+            "Files with '{files_seq}' extensions: {}.\n", self.collected.files
+        );
+        let _fmt_l2 = format!(
+            "Total lines of code: {}.\n", self.collected.lines
+        );
+        let _fmt_l3 = format!(
+            "Folders found: {}.", self.collected.folders
+        );
+
+        f.write_str(files_seq.as_str())
     }
 }
 

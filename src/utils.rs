@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display, Write};
 
 pub enum Target {
     Files,
@@ -31,16 +31,18 @@ impl Collected {
     }
 }
 
-pub fn format_sequence<T: Display>(mut vector: Vec<T>) -> String {
+pub fn format_sequence<T: Display>(vector: Vec<T>) -> String {
     if vector.len() <= 0 {
         return String::new();
     }
 
     let mut fmt = format!("{}", vector[0]);
-    vector.remove(0);
+    let vector_i = vector.iter()
+        .skip(1);
 
-    for element in vector {
-        fmt = format!("{}, {}", fmt, element);
+    for element in vector_i {
+        write!(fmt, ", {element}")
+            .expect("failed to format the sequence.");
     }
 
     fmt
@@ -51,7 +53,7 @@ mod tests {
     use super::{Collected, format_sequence};
 
     fn get_pseudo_collected() -> Collected {
-        use super::Target::*; // TODO: Is it valid?
+        use super::Target::*;
         let mut collected = Collected::new();
 
         collected.append(Files, 3);

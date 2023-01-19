@@ -1,6 +1,5 @@
 mod collector;
 mod inout;
-mod traits;
 mod utils;
 
 use std::env::args;
