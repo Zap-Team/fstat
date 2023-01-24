@@ -45,6 +45,7 @@ pub struct FStatOutput {
 }
 
 impl FStatOutput {
+    // FIXME: Panics cause it hides by some other `from`.
     pub fn from(input: FStatInput) -> Self {
         FStatOutput {
             input,
@@ -53,21 +54,40 @@ impl FStatOutput {
     }
 }
 
-impl Display for FStatOutput {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let files_seq = format_sequence(self.input.file_extensions.clone()); //
+trait Fmt {
+    type FmtTuple;
 
-        let _fmt_l1 = format!(
+    fn get_fmt_parts(&self) -> Self::FmtTuple;
+}
+
+impl Fmt for FStatOutput {
+    type FmtTuple = (String, String, String);
+
+    fn get_fmt_parts(&self) -> Self::FmtTuple {
+        let files_seq = format_sequence(self.input.file_extensions.clone());
+
+        let fmt_l1 = format!(
             "Files with '{files_seq}' extensions: {}.\n", self.collected.files
         );
-        let _fmt_l2 = format!(
+        let fmt_l2 = format!(
             "Total lines of code: {}.\n", self.collected.lines
         );
-        let _fmt_l3 = format!(
+        let fmt_l3 = format!(
             "Folders found: {}.", self.collected.folders
         );
 
-        f.write_str(files_seq.as_str())
+        (fmt_l1, fmt_l2, fmt_l3)
+    }
+}
+
+impl Display for FStatOutput {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let (mut base, fmt_p1, fmt_p2) = self.get_fmt_parts();
+
+        base.push_str(&fmt_p1);
+        base.push_str(&fmt_p2);
+
+        f.write_str(&base)
     }
 }
 

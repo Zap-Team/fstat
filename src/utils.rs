@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn format_sequence_test() {
-        let empty_vec: Vec<String> = Vec::new();
+        let empty_vec: Vec<i8> = Vec::new();
 
         let empty_seq = format_sequence(empty_vec);
         let single_seq = format_sequence(vec!["Hi!"]);
