@@ -1,4 +1,9 @@
-use std::fmt::{Debug, Display, Write};
+use std::fmt::{
+    Debug, 
+    Display, 
+    Formatter, 
+    Result
+};
 
 pub enum Target {
     Files,
@@ -31,34 +36,35 @@ impl Collected {
     }
 }
 
-pub fn format_sequence<T: Display>(vector: Vec<T>) -> String {
-    if vector.len() <= 0 {
-        return String::new();
+pub struct FormattedSequence<'a, T>(pub &'a [T]);
+
+impl<T: Display> Display for FormattedSequence<'_, T> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self.0 {
+            [] => Ok(()),
+            [base, rest @ ..] => {
+                write!(f, "{base}")?;
+
+                for item in rest {
+                    write!(f, ", {item}")?;
+                }
+
+                Ok(())
+            }
+        }
     }
-
-    let mut fmt = format!("{}", vector[0]);
-    let vector_i = vector.iter()
-        .skip(1);
-
-    for element in vector_i {
-        write!(fmt, ", {element}")
-            .expect("failed to format the sequence.");
-    }
-
-    fmt
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Collected, format_sequence};
+    use super::{Target, Collected, FormattedSequence};
 
     fn get_pseudo_collected() -> Collected {
-        use super::Target::*;
         let mut collected = Collected::new();
 
-        collected.append(Files, 3);
-        collected.append(Lines, 900);
-        collected.append(Folders, 2);
+        collected.append(Target::Files, 3);
+        collected.append(Target::Lines, 900);
+        collected.append(Target::Folders, 2);
 
         collected
     }
@@ -74,14 +80,12 @@ mod tests {
 
     #[test]
     fn format_sequence_test() {
-        let empty_vec: Vec<i8> = Vec::new();
+        let empty_seq = FormattedSequence::<String>(&[]);
+        let single_seq = FormattedSequence(&["Hi!"]);
+        let multiple_seq = FormattedSequence(&[1, 2, 3]);
 
-        let empty_seq = format_sequence(empty_vec);
-        let single_seq = format_sequence(vec!["Hi!"]);
-        let multiple_seq = format_sequence(vec![1, 2, 3]);
-
-        assert_eq!(empty_seq, String::new());
-        assert_eq!(single_seq, String::from("Hi!"));
-        assert_eq!(multiple_seq, String::from("1, 2, 3"));
+        assert_eq!(empty_seq.to_string(), String::new());
+        assert_eq!(single_seq.to_string(), String::from("Hi!"));
+        assert_eq!(multiple_seq.to_string(), String::from("1, 2, 3"));
     }
 }

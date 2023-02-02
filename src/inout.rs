@@ -1,12 +1,13 @@
 use std::fmt::{Display, Formatter, Result};
 
-use crate::utils::{Collected, format_sequence};
+use crate::utils::{Collected, FormattedSequence};
 
 #[derive(Debug)]
 pub struct FStatInput {
     pub options: Vec<String>,
     pub ignore_objects: Vec<String>,
-    pub file_extensions: Vec<String>
+    pub file_extensions: Vec<String>,
+    pub other_arguments: Vec<String>
 }
 
 impl FStatInput {
@@ -14,6 +15,7 @@ impl FStatInput {
         let mut options = Vec::new();
         let mut ignore_objects = Vec::new();
         let mut file_extensions = Vec::new();
+        let mut other_arguments = Vec::new();
 
         let args_i = args.iter()
             .skip(1);
@@ -25,67 +27,50 @@ impl FStatInput {
                 options.push(argument);
             } else if arg.starts_with(".") {
                 file_extensions.push(argument);
-            } else {
+            } else if arg.starts_with("/") {
                 ignore_objects.push(argument);
+            } else {
+                other_arguments.push(argument);
             }
         }
 
         FStatInput {
             options,
             ignore_objects,
-            file_extensions
+            file_extensions,
+            other_arguments
         }
     }
 }
 
 #[derive(Debug)]
-pub struct FStatOutput {
-    pub input: FStatInput,
-    pub collected: Collected
+pub struct FStatOutput<'a> {
+    pub collected: Collected,
+    pub file_extensions: &'a [String]
 }
 
-impl FStatOutput {
-    // FIXME: Panics cause it hides by some other `from`.
-    pub fn from(input: FStatInput) -> Self {
+impl<'a> From<&'a FStatInput> for FStatOutput<'a> {
+    fn from(input: &'a FStatInput) -> Self {
         FStatOutput {
-            input,
-            collected: Collected::new()
+            collected: Collected::new(),
+            file_extensions: input.file_extensions.as_slice()
         }
     }
 }
 
-trait Fmt {
-    type FmtTuple;
-
-    fn get_fmt_parts(&self) -> Self::FmtTuple;
-}
-
-impl Fmt for FStatOutput {
-    type FmtTuple = (String, String, String);
-
-    fn get_fmt_parts(&self) -> Self::FmtTuple {
-        let files_seq = format_sequence(self.input.file_extensions.clone());
-
-        let fmt_l1 = format!(
-            "Files with '{files_seq}' extensions: {}.\n", self.collected.files
-        );
-        let fmt_l2 = format!(
-            "Total lines of code: {}.\n", self.collected.lines
-        );
-        let fmt_l3 = format!(
-            "Folders found: {}.", self.collected.folders
-        );
-
-        (fmt_l1, fmt_l2, fmt_l3)
-    }
-}
-
-impl Display for FStatOutput {
+impl Display for FStatOutput<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let (mut base, fmt_p1, fmt_p2) = self.get_fmt_parts();
+        let files_seq = FormattedSequence(self.file_extensions);
+        let mut base = format!(
+            "Files with '{}' extensions: {}.\n", files_seq, self.collected.files
+        );
 
-        base.push_str(&fmt_p1);
-        base.push_str(&fmt_p2);
+        base.push_str(&format!(
+            "Total lines of code: {}.\n", self.collected.lines
+        ));
+        base.push_str(&format!(
+            "Folders found: {}.", self.collected.folders
+        ));
 
         f.write_str(&base)
     }
@@ -127,6 +112,6 @@ mod tests {
     #[test]
     fn fstat_output_test() {
         let pseudo_input = get_pseudo_input();
-        let _pseudo_output = FStatOutput::from(pseudo_input);
+        let _pseudo_output = FStatOutput::from(&pseudo_input);
     }
 }
